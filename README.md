@@ -11,12 +11,14 @@ This toolset transforms your raw Google Takeout data into a rich dataset. It map
 2.  **Batch Fetch Telemetry:** `reccobeats_call.py` fetches advanced metrics (Tempo, Valence, Liveness, etc.) using a 40-song batch limit.
 3.  **Map to MusicBrainz:** `mbid_mapping.py` uses a local database dump to link your songs to MusicBrainz IDs (MBIDs) via their ISRC.
 4.  **Deep AI Analysis:** `advanced_features.py` queries AcousticBrainz for high-level (Mood, Genre) and low-level (Rhythm, Tonal) data.
-5.  **Analyze & Clean:** The output is ready for Power BI, Tableau, or Excel for further filtering and visualization.
+5.  **Context Enrichment:** `lastfm_call.py` fetches human-tagged genres, album art, and global popularity scores (The "Hipster Index") from Last.fm.
+6.  **Analyze & Clean:** The output is ready for Power BI, Tableau, or Excel for further filtering and visualization.
 
 ## 🛠️ Prerequisites
 
 * **Python 3.13+**
 * **Spotify Developer Account:** To obtain a Client ID & Secret.
+* **Last.fm API Key:** To fetch genres and cover art (Free to obtain).
 * **Google Takeout:** Your `watch-history.json` file.
 * **MusicBrainz Database Dump:** You need the `mbdump.tar.bz2` (~6GB) from [MusicBrainz Data Dumps](https://data.metabrainz.org/pub/musicbrainz/data/fullexport/) to run Step 3.
 
@@ -30,7 +32,7 @@ This toolset transforms your raw Google Takeout data into a rich dataset. It map
 
 2.  **Install dependencies:**
     ```bash
-    pip install pandas spotipy requests python-dotenv
+    pip install pandas spotipy requests python-dotenv tqdm
     ```
 
 3.  **Set up environment variables:**
@@ -38,6 +40,7 @@ This toolset transforms your raw Google Takeout data into a rich dataset. It map
     ```ini
     SPOTIPY_CLIENT_ID='your_client_id_here'
     SPOTIPY_CLIENT_SECRET='your_client_secret_here'
+    LASTFM_API_KEY='your_lastfm_key_here'
     ```
 
 ## 🚀 Usage Guide
@@ -80,7 +83,15 @@ Queries the AcousticBrainz API for high-level and low-level descriptors.
 * **Run:** `python advanced_features.py`
 * **Output:** `acoustic_final_data.csv`
 
-### Step 5: Analysis & Visualization
+### Step 5: Fetch Context & Metadata (Last.fm)
+
+Queries Last.fm to fix "Unknown" genres, fetch high-res album art, and get global play counts. Includes smart "Artist Fallback" logic to fill in missing data.
+
+* **Input:** `watch-history.json`
+* **Run:** `python lastfm_call.py`
+* **Output:** `Song_Metadata_Detailed.csv`
+
+### Step 6: Analysis & Visualization
 
 The final CSV files are structured for easy import into Business Intelligence tools.
 
@@ -95,6 +106,7 @@ The final CSV files are structured for easy import into Business Intelligence to
 | `reccobeats_call.py` | Specifically fetches audio features from ReccoBeats in batches of 40. |
 | `mbid_mapping.py` | Maps ISRCs to MusicBrainz IDs using local dump. |
 | `advanced_features.py` | Fetches deep acoustic data (Beats, Chords, Mood) from AcousticBrainz. |
+| `lastfm_call.py` | Multi-threaded fetcher for Genres, Popularity, and Album Art from Last.fm. |
 
 ## 📊 Data Points
 
@@ -136,12 +148,20 @@ The final dataset includes the following metrics, which can be used to filter an
     * `Genre Rosamerica`: (Cla, Dan, Hip, Jaz, Pop, Rhy, Roc, Spe)
     * `Genre Tzanetakis`: (Blu, Cla, Cou, Dis, Hip, Jaz, Met, Pop, Reg, Roc)
 
+### 🔵 Context & Social Data (Last.fm)
 
+* **Primary Genre:** Human-tagged genre (e.g., "Math Rock", "Shoegaze").
+* **Secondary Genre:** Additional context tags.
+* **Global Listener Count:** Total unique listeners worldwide. Useful for calculating a "Hipster Index" (Low global listeners vs. High personal plays).
+* **Global Playcount:** Total scrobbles worldwide.
+* **Album Name:** The specific album the track belongs to.
+* **Cover Art URL:** Link to the Extra Large album cover image.
 
 ### 🛡️ Acknowledgments
 
-* **AcousticBrainz:** For providing the Essentia music analysis data.
+* **AcousticBrainz:** For providing the Essential music analysis data.
 * **MusicBrainz:** For the open-source metadata database.
 * **Spotify API:** Metadata resolution.
+* **Last.fm:** For social tags, popularity metrics, and cover art.
 * **ReccoBeats API:** Audio feature telemetry.
 * **Power BI:** Recommended for final data visualization and transformation.
